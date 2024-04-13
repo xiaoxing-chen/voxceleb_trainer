@@ -13,7 +13,7 @@ class ResNetSE(nn.Module):
         super(ResNetSE, self).__init__()
 
         print('Embedding size is %d, encoder %s.'%(nOut, encoder_type))
-        
+
         self.inplanes   = num_filters[0]
         self.encoder_type = encoder_type
         self.n_mels     = n_mels
@@ -29,8 +29,8 @@ class ResNetSE(nn.Module):
         self.layer3 = self._make_layer(block, num_filters[2], layers[2], stride=(2, 2))
         self.layer4 = self._make_layer(block, num_filters[3], layers[3], stride=(1, 1))
 
-        self.instancenorm   = nn.InstanceNorm1d(n_mels)
-        self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=n_mels)
+        # self.instancenorm   = nn.InstanceNorm1d(n_mels)
+        # self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=n_mels)
 
         if self.encoder_type == "SAP":
             self.sap_linear = nn.Linear(num_filters[3] * block.expansion, num_filters[3] * block.expansion)
@@ -76,11 +76,11 @@ class ResNetSE(nn.Module):
 
     def forward(self, x):
 
-        with torch.no_grad():
-            with torch.cuda.amp.autocast(enabled=False):
-                x = self.torchfb(x)+1e-6
-                if self.log_input: x = x.log()
-                x = self.instancenorm(x).unsqueeze(1).detach()
+        # with torch.no_grad():
+        #     with torch.cuda.amp.autocast(enabled=False):
+        #         x = self.torchfb(x)+1e-6
+        #         if self.log_input: x = x.log()
+        #         x = self.instancenorm(x).unsqueeze(1).detach()
 
         x = self.conv1(x)
         x = self.bn1(x)
@@ -90,7 +90,7 @@ class ResNetSE(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        
+
         x = torch.mean(x, dim=2, keepdim=True)
 
         if self.encoder_type == "SAP":
